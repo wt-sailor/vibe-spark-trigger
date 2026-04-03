@@ -1,27 +1,37 @@
-import { useState } from 'react';
-import { useVibeNotifications } from '@/hooks/use-vibe-notifications';
+import { useState } from "react";
+import { toast } from "react-toastify";
+import { useVibeNotifications } from "@/hooks/use-vibe-notifications";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const Index = () => {
-  const { isRegistered, userId, isRegistering, messages, register, unregister } = useVibeNotifications();
-  const [inputUserId, setInputUserId] = useState('demo-user-1');
-  const [notifTitle, setNotifTitle] = useState('Hello from Vibe! 🎉');
-  const [notifBody, setNotifBody] = useState('This is a test push notification.');
-  const [targetUsers, setTargetUsers] = useState('');
+  const {
+    isRegistered,
+    userId,
+    isRegistering,
+    messages,
+    register,
+    unregister,
+  } = useVibeNotifications();
+  const [inputUserId, setInputUserId] = useState("demo-user-1");
+  const [notifTitle, setNotifTitle] = useState("Hello from Vibe! 🎉");
+  const [notifBody, setNotifBody] = useState(
+    "This is a test push notification.",
+  );
+  const [targetUsers, setTargetUsers] = useState("");
   const [isSending, setIsSending] = useState(false);
 
   const handleSendNotification = async () => {
     setIsSending(true);
     try {
       const response = await fetch(`${API_URL}/api/send-notification`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: notifTitle,
           body: notifBody,
           externalUsers: targetUsers.trim()
-            ? targetUsers.split(',').map(u => u.trim())
+            ? targetUsers.split(",").map((u) => u.trim())
             : undefined,
         }),
       });
@@ -30,10 +40,9 @@ const Index = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
-      alert('Notification sent!\n' + JSON.stringify(data));
+      await response.json();
     } catch (error) {
-      alert('Failed to send: ' + (error as Error).message);
+      toast.error("Failed to send: " + (error as Error).message);
     } finally {
       setIsSending(false);
     }
@@ -68,8 +77,8 @@ const Index = () => {
                   type="text"
                   placeholder="Enter a user ID (e.g. demo-user-1)"
                   value={inputUserId}
-                  onChange={e => setInputUserId(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && register(inputUserId)}
+                  onChange={(e) => setInputUserId(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && register(inputUserId)}
                   className="flex-1 rounded border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <button
@@ -77,7 +86,7 @@ const Index = () => {
                   disabled={isRegistering}
                   className="rounded bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 px-4 py-2 text-white font-medium transition"
                 >
-                  {isRegistering ? 'Registering…' : 'Register'}
+                  {isRegistering ? "Registering…" : "Register"}
                 </button>
               </div>
             ) : (
@@ -111,33 +120,40 @@ const Index = () => {
             <div className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Title</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Title
+                  </label>
                   <input
                     type="text"
                     value={notifTitle}
-                    onChange={e => setNotifTitle(e.target.value)}
+                    onChange={(e) => setNotifTitle(e.target.value)}
                     className="w-full rounded border border-gray-600 bg-gray-700 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Body</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Body
+                  </label>
                   <input
                     type="text"
                     value={notifBody}
-                    onChange={e => setNotifBody(e.target.value)}
+                    onChange={(e) => setNotifBody(e.target.value)}
                     className="w-full rounded border border-gray-600 bg-gray-700 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Target Users <span className="text-gray-500 text-xs">(comma-separated, leave blank to broadcast)</span>
+                  Target Users{" "}
+                  <span className="text-gray-500 text-xs">
+                    (comma-separated, leave blank to broadcast)
+                  </span>
                 </label>
                 <input
                   type="text"
                   placeholder="user-1, user-2"
                   value={targetUsers}
-                  onChange={e => setTargetUsers(e.target.value)}
+                  onChange={(e) => setTargetUsers(e.target.value)}
                   className="w-full rounded border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -146,7 +162,7 @@ const Index = () => {
                 disabled={isSending}
                 className="w-full rounded bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 px-4 py-2 text-white font-medium transition"
               >
-                {isSending ? '⏳ Sending…' : '📤 Send Notification'}
+                {isSending ? "⏳ Sending…" : "📤 Send Notification"}
               </button>
             </div>
           </div>
@@ -166,7 +182,10 @@ const Index = () => {
             ) : (
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {messages.map((msg, i) => (
-                  <div key={i} className="border border-gray-700 rounded p-3 bg-gray-700">
+                  <div
+                    key={i}
+                    className="border border-gray-700 rounded p-3 bg-gray-700"
+                  >
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <span className="inline-block bg-gray-600 text-gray-100 px-2 py-0.5 text-xs rounded font-medium mb-1">
@@ -176,7 +195,9 @@ const Index = () => {
                           {JSON.stringify(msg.payload, null, 2)}
                         </pre>
                       </div>
-                      <span className="shrink-0 text-xs text-gray-500">{msg.time}</span>
+                      <span className="shrink-0 text-xs text-gray-500">
+                        {msg.time}
+                      </span>
                     </div>
                   </div>
                 ))}

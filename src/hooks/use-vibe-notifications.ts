@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { toast } from 'react-toastify';
 import { vibeClient } from '@/lib/vibe-client';
 
 export function useVibeNotifications() {
@@ -9,7 +10,7 @@ export function useVibeNotifications() {
 
   const register = useCallback(async (externalUserId: string) => {
     if (!externalUserId.trim()) {
-      alert('Please enter a user ID');
+      toast.error('Please enter a user ID');
       return;
     }
     setIsRegistering(true);
@@ -26,7 +27,8 @@ export function useVibeNotifications() {
           ...prev,
         ]);
         const p = payload as { title?: string; body?: string };
-        alert((p?.title || 'New notification') + '\n' + (p?.body || ''));
+        const message = [p?.title || 'New notification', p?.body].filter(Boolean).join('\n');
+        toast.info(message);
       });
 
       vibeClient.onBackgroundMessage((payload: unknown) => {
@@ -45,9 +47,9 @@ export function useVibeNotifications() {
 
       setUserId(externalUserId);
       setIsRegistered(true);
-      alert('Device registered successfully!');
+      toast.success('Device registered successfully!');
     } catch (error) {
-      alert('Failed to register device: ' + (error as Error).message);
+      toast.error('Failed to register device: ' + (error as Error).message);
     } finally {
       setIsRegistering(false);
     }
@@ -58,9 +60,9 @@ export function useVibeNotifications() {
       await vibeClient.unregisterDevice(userId);
       setIsRegistered(false);
       setUserId('');
-      alert('Device unregistered');
+      toast.success('Device unregistered');
     } catch (error) {
-      alert('Failed to unregister: ' + (error as Error).message);
+      toast.error('Failed to unregister: ' + (error as Error).message);
     }
   }, [userId]);
 

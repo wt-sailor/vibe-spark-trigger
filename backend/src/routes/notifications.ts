@@ -18,6 +18,7 @@ router.post("/send-notification", async (req: Request, res: Response) => {
     // Get credentials from environment
     const appId = process.env.VIBE_MESSAGE_APP_ID;
     const secretKey = process.env.VIBE_MESSAGE_SECRET_KEY;
+    const baseUrl = "http://localhost:3200/api";
 
     if (!appId || !secretKey) {
       console.error("Missing Vibe Message configuration");
@@ -29,6 +30,7 @@ router.post("/send-notification", async (req: Request, res: Response) => {
 
     // Initialize Vibe Message server client
     const server = initServerClient({
+      baseUrl,
       appId,
       secretKey,
     });
@@ -41,8 +43,10 @@ router.post("/send-notification", async (req: Request, res: Response) => {
         icon: icon || "/placeholder.svg",
         click_action: clickAction || "/",
       },
-      ...(externalUsers && Array.isArray(externalUsers) && externalUsers.length > 0 
-        ? { externalUsers } 
+      ...(externalUsers &&
+      Array.isArray(externalUsers) &&
+      externalUsers.length > 0
+        ? { externalUsers }
         : {}),
     };
 
@@ -57,7 +61,8 @@ router.post("/send-notification", async (req: Request, res: Response) => {
     console.error("Notification error:", error);
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : "Failed to send notification",
+      error:
+        error instanceof Error ? error.message : "Failed to send notification",
     });
   }
 });

@@ -30,22 +30,28 @@ serve(async (req) => {
       );
     }
 
-    const response = await fetch('https://vibemessage.sailorlabs.in/api/send', {
+    const payload: Record<string, unknown> = {
+      notificationData: {
+        title,
+        body,
+        icon: icon || '/placeholder.svg',
+        click_action: clickAction || '/',
+      },
+    };
+
+    if (externalUsers?.length) {
+      payload.externalUsers = externalUsers;
+    }
+
+    // Use the vibe-message server SDK via direct API call
+    const response = await fetch('https://vibemessage.sailorlabs.in/api/notifications/send', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-app-id': appId,
         'x-secret-key': secretKey,
       },
-      body: JSON.stringify({
-        notificationData: {
-          title,
-          body,
-          icon: icon || '/placeholder.svg',
-          click_action: clickAction || '/',
-        },
-        externalUsers: externalUsers?.length ? externalUsers : undefined,
-      }),
+      body: JSON.stringify(payload),
     });
 
     const data = await response.text();

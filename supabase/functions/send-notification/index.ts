@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { initServerClient } from "npm:vibe-message@1.1.4";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,9 +21,7 @@ serve(async (req) => {
       );
     }
 
-    const appId = 'app_HKKiWsalytaLP9Dd';
     const secretKey = Deno.env.get('VIBE_MESSAGE_SECRET_KEY');
-
     if (!secretKey) {
       return new Response(
         JSON.stringify({ error: 'Secret key not configured' }),
@@ -30,7 +29,12 @@ serve(async (req) => {
       );
     }
 
-    const payload: Record<string, unknown> = {
+    const server = initServerClient({
+      appId: 'app_HKKiWsalytaLP9Dd',
+      secretKey,
+    });
+
+    const notificationOptions: Record<string, unknown> = {
       notificationData: {
         title,
         body,
@@ -40,26 +44,15 @@ serve(async (req) => {
     };
 
     if (externalUsers?.length) {
-      payload.externalUsers = externalUsers;
+      notificationOptions.externalUsers = externalUsers;
     }
 
-    // Use the vibe-message server SDK via direct API call
-    const response = await fetch('https://vibemessage.sailorlabs.in/api/notifications/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-app-id': appId,
-        'x-secret-key': secretKey,
-      },
-      body: JSON.stringify(payload),
-    });
+    const result = await server.notification(notificationOptions);
 
-    const data = await response.text();
-
-    return new Response(data, {
-      status: response.status,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ success: true, data: result }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   } catch (error) {
     return new Response(
       JSON.stringify({ error: error.message }),

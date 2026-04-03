@@ -36,6 +36,7 @@ export function useVibeNotifications() {
         const message = [p?.title || "New notification", p?.body]
           .filter(Boolean)
           .join("\n");
+        console.log("Notification:", message);
         toast.info(message);
       });
 

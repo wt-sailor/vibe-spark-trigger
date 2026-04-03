@@ -5,10 +5,10 @@ const router = Router();
 
 router.post("/send-notification", async (req: Request, res: Response) => {
   try {
-    const { title, body, icon, clickAction, externalUsers } = req.body;
+    const { title, body, icon, clickAction, externalUsers, silent, data } = req.body;
 
     // Validate required fields
-    if (!title || !body) {
+    if (!silent && (!title || !body)) {
       return res.status(400).json({
         success: false,
         error: "title and body are required",
@@ -38,11 +38,13 @@ router.post("/send-notification", async (req: Request, res: Response) => {
     // Build notification options
     const notificationOptions = {
       notificationData: {
-        title,
-        body,
+        title: title || (silent ? "Silent Update" : ""),
+        body: body || "",
         icon: icon || "/placeholder.svg",
         click_action: clickAction || "/",
+        silent: !!silent,
       },
+      data: data || {},
       ...(externalUsers &&
       Array.isArray(externalUsers) &&
       externalUsers.length > 0

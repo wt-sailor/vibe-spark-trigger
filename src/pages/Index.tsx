@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
 import { useVibeNotifications } from "@/hooks/use-vibe-notifications";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-const Index = () => {
+export default function Index() {
   const {
     isRegistered,
     userId,
@@ -19,7 +19,24 @@ const Index = () => {
     "This is a test push notification.",
   );
   const [targetUsers, setTargetUsers] = useState("");
+  const [isSilent, setIsSilent] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [showSilentAlert, setShowSilentAlert] = useState(false);
+  const alertTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Effect to handle silent notification alert (5 seconds)
+  useEffect(() => {
+    if (messages.length > 0 && messages[0].type === "silent") {
+      setShowSilentAlert(true);
+      if (alertTimerRef.current) {
+        clearTimeout(alertTimerRef.current);
+      }
+      alertTimerRef.current = setTimeout(() => {
+        setShowSilentAlert(false);
+        alertTimerRef.current = null;
+      }, 5000);
+    }
+  }, [messages]);
 
   const handleSendNotification = async () => {
     setIsSending(true);
@@ -30,6 +47,7 @@ const Index = () => {
         body: JSON.stringify({
           title: notifTitle,
           body: notifBody,
+          silent: isSilent,
           externalUsers: targetUsers.trim()
             ? targetUsers.split(",").map((u) => u.trim())
             : undefined,
@@ -37,10 +55,16 @@ const Index = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || `HTTP error! status: ${response.status}`,
+        );
       }
 
       await response.json();
+      toast.success(
+        isSilent ? "Silent notification sent!" : "Notification sent!",
+      );
     } catch (error) {
       toast.error("Failed to send: " + (error as Error).message);
     } finally {
@@ -54,9 +78,13 @@ const Index = () => {
         {/* Header */}
         <div className="mb-10 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600">
-            <span className="text-3xl">🔔</span>
+            <span className={`text-3xl ${showSilentAlert && "animate-bounce"}`}>
+              🔔
+            </span>
           </div>
-          <h1 className="text-4xl font-bold text-white">Vibe Message Demo</h1>
+          <div className="flex items-center justify-center gap-3">
+            <h1 className="text-4xl font-bold text-white">Vibe Message Demo</h1>
+          </div>
           <p className="mt-2 text-gray-300">
             Register a device, then trigger push notifications in real time.
           </p>
@@ -118,7 +146,23 @@ const Index = () => {
               Trigger a push notification via the backend API.
             </p>
             <div className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="flex items-center gap-2 py-2">
+                <input
+                  type="checkbox"
+                  id="silent-toggle"
+                  checked={isSilent}
+                  onChange={(e) => setIsSilent(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500"
+                />
+                <label
+                  htmlFor="silent-toggle"
+                  className="text-sm font-medium text-gray-300"
+                >
+                  Silent Notification (No visual alert, UI update only)
+                </label>
+              </div>
+
+              {!isSilent && (
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
                     Title
@@ -130,18 +174,23 @@ const Index = () => {
                     className="w-full rounded border border-gray-600 bg-gray-700 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Body
-                  </label>
-                  <input
-                    type="text"
-                    value={notifBody}
-                    onChange={(e) => setNotifBody(e.target.value)}
-                    className="w-full rounded border border-gray-600 bg-gray-700 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  {isSilent ? "Silent Data (Body)" : "Body"}
+                </label>
+                <input
+                  type="text"
+                  value={notifBody}
+                  onChange={(e) => setNotifBody(e.target.value)}
+                  placeholder={
+                    isSilent ? "Enter data here..." : "Enter message body..."
+                  }
+                  className="w-full rounded border border-gray-600 bg-gray-700 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">
                   Target Users{" "}
@@ -162,7 +211,11 @@ const Index = () => {
                 disabled={isSending}
                 className="w-full rounded bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 px-4 py-2 text-white font-medium transition"
               >
-                {isSending ? "⏳ Sending…" : "📤 Send Notification"}
+                {isSending
+                  ? "⏳ Sending…"
+                  : isSilent
+                    ? "📤 Send Silent Update"
+                    : "📤 Send Notification"}
               </button>
             </div>
           </div>
@@ -208,6 +261,4 @@ const Index = () => {
       </div>
     </div>
   );
-};
-
-export default Index;
+}

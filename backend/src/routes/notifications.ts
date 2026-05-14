@@ -18,7 +18,7 @@ router.post("/send-notification", async (req: Request, res: Response) => {
     // Get credentials from environment
     const appId = process.env.VIBE_MESSAGE_APP_ID;
     const secretKey = process.env.VIBE_MESSAGE_SECRET_KEY;
-    const baseUrl = "http://localhost:3200/api";
+    const baseUrl = process.env.VIBE_MESSAGE_URL+"/api";
 
     if (!appId || !secretKey) {
       console.error("Missing Vibe Message configuration");
